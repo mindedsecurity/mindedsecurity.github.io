@@ -83,6 +83,7 @@
       this.current_editor.options.extraKeys = {
         "Ctrl-Enter": function(el) {
           sendObfuscated(that.deob_editor, el.getValue());
+          location.hash=btoa(encodeURIComponent(el.getValue()));
         }
       }
       // Make it resizable
@@ -216,11 +217,12 @@
         }
       })
     }
-    var use_Remote = false;
+    var use_Remote = true;
     var deobURL = "http://" + location.hostname + ":3001/deobfuscate";
     
     function sendObfuscated(el, src) {
       if (use_Remote) {
+        
         var content = src || el.getValue();
         $.ajax({
           url: deobURL,
@@ -240,9 +242,12 @@
             // else{
             //  add_notification ("Code deobfuscated", "info");
             // }
+          }).fail(function (argument) {
+            console.log("Fallback to local")
+            el.setValue(deobfuscate(content));
           });
       }else{
-        el.setValue(deobfuscate(src));
+        el.setValue(deobfuscate(content));
       }
     }
     this.bindDeobfuscate = function(targetEditor) {

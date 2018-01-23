@@ -1840,8 +1840,8 @@ exports.update = function(arr, parent) {
 
 // module.exports = $.extend(exports);
 
-}).call(this,{"isBuffer":require("../../../../../../../usr/local/lib/node_modules/browserify/node_modules/is-buffer/index.js")})
-},{"../../../../../../../usr/local/lib/node_modules/browserify/node_modules/is-buffer/index.js":384,"htmlparser2":110,"parse5":339}],11:[function(require,module,exports){
+}).call(this,{"isBuffer":require("../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/is-buffer/index.js")})
+},{"../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/is-buffer/index.js":384,"htmlparser2":110,"parse5":339}],11:[function(require,module,exports){
 /**
  * Module dependencies
  */
@@ -46390,8 +46390,8 @@ var jstiller = (function() {
     if (!ast) {
       return ast;
     }
-    debug("TYPE:",ast.type);
-    
+    debug("TYPE:", ast.type);
+
     scope = scope || gscope;
 
     scope_set_this(scope, scope.__proto__[EXP_MAYBE_EXP_THIS_OBJ] || scope[EXP_THIS_OBJ]);
@@ -46668,7 +46668,7 @@ var jstiller = (function() {
           });
         }
         return ast;
-      //case 'AssignmentPattern':console.log(33333)
+        //case 'AssignmentPattern':console.log(33333)
 
       case 'AssignmentExpression':
         ret = {
@@ -46735,7 +46735,7 @@ var jstiller = (function() {
           }
         }
 
-        if (ret.left.type === "ArrayPattern") { 
+        if (ret.left.type === "ArrayPattern") {
           if (_trv.type === 'Literal' || _trv.type === 'ArrayExpression') {
             ret.left.elements.forEach(function(el, id) {
               if (el != null) {
@@ -46762,7 +46762,7 @@ var jstiller = (function() {
           }
         } else if (ret.left.type === "MemberExpression") {
           // var ff={.*};ff.t=4;
-          var _tmp; 
+          var _tmp;
           _tmp = resolveMemberExpression(ret.left, scope);
 
           if (_tmp.scope !== scope || (!_tmp.resolved && !_tmp.last_resolved)) {
@@ -46854,7 +46854,7 @@ var jstiller = (function() {
               gscope[ret.left.name] = {};
             if (_trv.type === "Literal" || _trv.type === "UnaryExpression") {
               gscope[ret.left.name].value = _trv.value;
-              gscope[ret.left.name].pure = true; 
+              gscope[ret.left.name].pure = true;
               debug("Literal", gscope[ret.left.name], ret.right._trv)
             } else if (_trv.type == "Identifier" &&
               global_vars.indexOf(_trv.name) !== -1) {
@@ -47042,8 +47042,8 @@ var jstiller = (function() {
           _fbody = _fbody.value;
           if (value.length > 0) {
             _params = value.map(function(a) {
-                /*_preamble+=a.value+',' ;*/ 
-                return {
+              /*_preamble+=a.value+',' ;*/
+              return {
                 type: "Identifier",
                 name: a.value
               }
@@ -47227,7 +47227,7 @@ var jstiller = (function() {
           }) && ret.purearg) {
           value = realCallee.object.value.split.apply(realCallee.object.value,
             ret.arguments.map(getValue));
-          
+
           //Commented out, in the end it's very easy to do it without parseAst.
           //var _tast=parseAst(JSON.stringify(value)).body[0].expression;
           var _tast = {
@@ -47352,7 +47352,7 @@ var jstiller = (function() {
             } else {
               value = valFromScope.value.value;
             }
-            
+
             if (value.body && value.body.pure) {
               ret.callee = realCallee = value;
               if (_tmp) {
@@ -47641,15 +47641,15 @@ var jstiller = (function() {
 
         if (ast.name in scope && valFromScope.pure) { // pure==Literals
           value = mkliteral(valFromScope.value);
-        
+
         } else if (ast.name in scope &&
           (valFromScope.purable || valFromScope.pure_global)) {
-          
+
           value = valFromScope.value;
 
-        } else if (expandvars && (ast.name in gscope) 
-                  && (gscope[ast.name].pure_global || gscope[ast.name].pure)) {
-          
+        } else if (expandvars && (ast.name in gscope)
+          && (gscope[ast.name].pure_global || gscope[ast.name].pure)) {
+
           value = mkliteral(gscope[ast.name].value);
           ast.retVal = value;
           if (typeof gscope[ast.name].value.type === "undefined")
@@ -47697,7 +47697,7 @@ var jstiller = (function() {
         ret = {};
         ret.type = 'ObjectExpression';
         ret.properties = ast.properties.map(function(pr) {
-          
+
           /*if(pr.value.type==='FunctionExpression')
             scope_set_maybe_this(pr.value, ret ); */
           var _tp = ast_reduce_scoped(pr.value);
@@ -47789,11 +47789,11 @@ var jstiller = (function() {
             name: ret.property.value
           };
         }
-        
+
         if (!ret.property.parent) {
           ret.property.parent = ret;
         }
-        
+
         // ['fds','gfd'][..] direct access to array elements 
         if (match(ret, {
             object: {
@@ -47833,7 +47833,7 @@ var jstiller = (function() {
             return value;
 
         }
-        
+
         if (match(ret, {
             object: {
               type: 'Literal',
@@ -48012,22 +48012,22 @@ var jstiller = (function() {
           set_scope(scope, ast.id.name, {
             value: _scopeVal.value,
             pure: true
-          }); 
+          });
         } else if (_scopeVal && _scopeVal.type === "Identifier" && global_vars.indexOf(_scopeVal.name) !== -1) {
           set_scope(scope, ast.id.name, {
             value: _scopeVal,
             pure_global: true
-          }); 
+          });
         } else if (_scopeVal && _scopeVal.type === "ArrayExpression") {
           set_scope(scope, ast.id.name, {
             value: _scopeVal,
             purable: true
-          }); 
+          });
         } else if (_scopeVal && _scopeVal.type === "UnaryExpression" && _scopeVal.argument.pure) {
           set_scope(scope, ast.id.name, {
             value: _scopeVal.value,
             pure: true
-          }); 
+          });
         } else if (_scopeVal && _scopeVal.type === "ObjectExpression") { // VariableDeclarator
 
           debug("Object?? VariableDeclarator", (_scopeVal))
@@ -48039,7 +48039,7 @@ var jstiller = (function() {
             value: _scopeVal,
             pure: false
           });
-        
+
         } else if (_scopeVal && _scopeVal.type === "MemberExpression") { // VariableDeclarator
           debug('MemberExpression VariableDeclarator>>>', _scopeVal)
           var _tmp = _scopeVal
@@ -48054,10 +48054,10 @@ var jstiller = (function() {
             set_scope(scope, ast.id.name, {
               value: _scopeVal,
               pure: false
-            }); 
+            });
             return ret;
           } else if (_sval.pure_global) {
-            
+
             if (valFromScope.value.name === 'window') {
               _lval = {
                 result: {
@@ -48078,7 +48078,7 @@ var jstiller = (function() {
             set_scope(scope, ast.id.name, {
               value: _scopeVal,
               pure: false
-            }); 
+            });
             return ret;
           }
           if (_sval.value[CURRENT_OBJ] && (_sval.value[CURRENT_OBJ].type === "ObjectExpression" ||
@@ -48117,7 +48117,7 @@ var jstiller = (function() {
             value: ret.init,
             pure: false
           });
-          
+
         } else {
           set_scope(scope, ast.id.name, {
             value: _scopeVal,
@@ -48132,8 +48132,8 @@ var jstiller = (function() {
 
 
       case 'FunctionDeclaration':
-        //Eg function f(b){cc} 
-        
+      //Eg function f(b){cc} 
+
         fscope = Object.create(scope);
         fscope.externalRefs = [];
         fscope.closed = true;
@@ -48181,14 +48181,14 @@ var jstiller = (function() {
 
 
       case 'FunctionExpression':
-        //Eg var t=function f(b){cc}  ; t=function f(b){cc} ; (function g(){})..
+      //Eg var t=function f(b){cc}  ; t=function f(b){cc} ; (function g(){})..
 
         fscope = Object.create(scope);
         fscope.externalRefs = [];
         fscope.closed = true;
-        
+
         scopes.push(fscope);
-        
+
         if (parent.type === "ObjectExpression")
           scope_set_this(fscope, parent);
         var _replarg = ast.called && ast.called_with_args
@@ -48208,7 +48208,7 @@ var jstiller = (function() {
 
         value = ast_reduce(ast.body, fscope, false, ast);
         value.scope = scopes[scopes.length - 1]
-        value.scopeidx = scopes.length - 1; 
+        value.scopeidx = scopes.length - 1;
         debug("FunctionExpression", "isCalled?", (ast), 'scope:', scopes[value.scope]);
         ret = {
           type: ast.type,
@@ -48240,7 +48240,7 @@ var jstiller = (function() {
         return ret;
 
 
-      case 'BlockStatement': 
+      case 'BlockStatement':
         ret = {
           type: ast.type,
           body: ast.body.map(ast_reduce_scoped)
@@ -48272,7 +48272,7 @@ var jstiller = (function() {
             }
           }
         } else {
-          ret.pure = pure; 
+          ret.pure = pure;
           return ret;
         }
 
@@ -48281,7 +48281,7 @@ var jstiller = (function() {
         debug('ReturnStatement');
         value = ast_reduce(ast.argument, scope, true, ast);
         scope.returns = scope.hasOwnProperty("returns") ? ++scope.returns : 1;
-        
+
         debug("ReturnStatement :", (value), (ast.argument))
         ret = {
           type: 'ReturnStatement',
@@ -48452,7 +48452,7 @@ var jstiller = (function() {
           expressions: ast.expressions.map(ast_reduce_scoped)
         };
 
-      case 'UpdateExpression': 
+      case 'UpdateExpression':
         arg = ast_reduce_scoped(ast.argument);
         debug('UpdateExpression', arg, ast.argument)
         if (inLoop) return ast;
@@ -48463,12 +48463,18 @@ var jstiller = (function() {
           if (arg.name in scope)
             valFromScope = findScope(arg.name, scope).value
           debug("valFromScope", valFromScope)
-          if (ast.prefix && valFromScope) {
-            if (valFromScope.pure) { //It's a Literal  
+          if (valFromScope) {
+            if (ast.prefix) {
               valFromScope.value = uoperators[ast.operator](valFromScope.value)
               value = valFromScope.value;
               debug(scope)
               return mkliteral(value);
+            } else {
+              _tmp = valFromScope.value;
+              valFromScope.value = uoperators[ast.operator](valFromScope.value)
+              value = valFromScope.value;
+              debug(scope);
+              return mkliteral(_tmp);
             }
           }
         }
@@ -48513,11 +48519,11 @@ var jstiller = (function() {
 
       case 'WithStatement': //TODO: Sets this to argument.
         return ast;
-      // TODO: 
+        // TODO: 
 
       case 'ArrowFunctionExpression':
         return ast
-      // TODO: 
+        // TODO: 
 
       case 'AwaitExpression':
       case 'ClassBody':
