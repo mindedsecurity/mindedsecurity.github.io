@@ -46328,7 +46328,12 @@ var jstiller = (function() {
     }
 
     if (n.type === "MemberExpression") {
-      if (n.property.type == "Identifier") {
+      // 'ss'[a=1] -> 'ss'[1] 
+      if (n.property.type == "AssignmentExpression") { 
+        if (n.property.right.type === 'Literal') {
+          return n.object.value[n.property.right.value] + '';
+        }
+      } else if (n.property.type == "Identifier") {
         if (n.object.type === "ArrayExpression") {
           if ([][n.property.name]) {
             return [][n.property.name].toString()
@@ -46336,6 +46341,8 @@ var jstiller = (function() {
         } else if (n.object.type === "Literal") {
           if (n.object.value[n.property.name]) {
             return n.object.value[n.property.name].toString()
+          } else { // returns undefined as string 
+            return "undefined";
           }
         } else if (n.object.type === "Identifier" && global_vars.indexOf(n.object.name) !== -1) {
           if (global[n.object.name][n.property.name]) {
@@ -48470,7 +48477,8 @@ var jstiller = (function() {
               debug(scope)
               return mkliteral(value);
             } else {
-              _tmp = valFromScope.value;
+              // cast to int
+              _tmp = +valFromScope.value;
               valFromScope.value = uoperators[ast.operator](valFromScope.value)
               value = valFromScope.value;
               debug(scope);
