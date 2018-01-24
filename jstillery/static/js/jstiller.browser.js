@@ -45615,6 +45615,8 @@ var natives = require("./native_props").natives
 require("./libs/cycle");
 var collectHTMLData = require("./libs/htmlParse").collectHTMLData
 
+var USE_PARTIAL = typeof process.env.USE_PARTIAL !== 'undefined' ? process.env.USE_PARTIAL : true;
+
 function genToStringObj(a) {
   return function() {
     return "[object " + a + "]"
@@ -46209,7 +46211,9 @@ var jstiller = (function() {
           {scope,value}
   */
   function findScope(key, scope) {
-    if (!scope || scope.__proto__ === scope) return false;
+    if (!scope || scope.__proto__ === scope) {
+      return false;
+    }
     if (scope.hasOwnProperty(key)) {
       return {
         scope: scope,
@@ -46377,6 +46381,7 @@ var jstiller = (function() {
   };
   function init() {
     gscope = {};
+   // global_vars.forEach(function (el){ gscope[el] = {value:{type: 'Identifier', name:el, native_type: this[el]?typeof this[el]:"object"} }});
     gscope.externalRefs = [];
     scope_set_this(gscope, global_this)
     // gscope[EXP_MAYBE_EXP_THIS_OBJ] = gscope[EXP_THIS_OBJ] = global_this;
@@ -46606,9 +46611,13 @@ var jstiller = (function() {
             value = findScope(arg.name, scope);
             if (value && value.value && value.value.value)
               arg = value.value.value;
+            else if(arg.native_type || global_vars.indexOf(arg.name) !== -1)
+              arg.native_type = this[arg.name]?typeof this[arg.name] :"object";
           }
-          var typeOps = ["ObjectExpression", "ArrayExpression", "Literal"]
-          if (typeOps.indexOf(arg.type) !== -1) { // []|{}|String
+          var typeOps = ["ObjectExpression", "ArrayExpression", "Literal","FunctionExpression"];
+          var typeOfOps = ["object","function"];
+          
+          if (typeOps.indexOf(arg.type) !== -1 || typeOfOps.indexOf(arg.native_type) !== -1) { // []|{}|String
             //var _tarV=ret.callee.object.elements.map(function(a){return genCode(a,{format:{json:true}})})
             if (arg.type === "ArrayExpression") {
               try {
@@ -46619,10 +46628,13 @@ var jstiller = (function() {
                   return "XX"
                 })
               }
-            } else if (arg.type === "ObjectExpression")
+            } else if (arg.type === "ObjectExpression" || arg.native_type === 'object')
               value = {};
-            else
+            else if (arg.type === "FunctionExpression" || arg.native_type === 'function'){
+              value = function (){};
+            } else{
               value = undefined; //we can force to undefined as the "pure" operation are already taken above
+            }
 
             if (ast.operator === "+") {
               value = +value;
@@ -47421,7 +47433,7 @@ var jstiller = (function() {
           } else {
             calleeBody.retVal = mkliteral(calleeBody.value);
           }
-        } else if ( /*EXPERIMENTAL!*/ calleeBody && calleeBody.body.length === 1 && calleeBody.scope.hasOwnProperty("returns")
+        } else if ( /*EXPERIMENTAL!*/ calleeBody && calleeBody.body && calleeBody.body.length === 1 && calleeBody.scope.hasOwnProperty("returns")
           && calleeBody.scope.returns === 1) {
           //TODO   We need to copy the function scope and add params values!! tmp_scope = Object.create(calleBody.scope)
           //       Copy all values.
@@ -47535,7 +47547,9 @@ var jstiller = (function() {
                   }
                 };
                 try {
-                  var vm_returned = vm.runInNewContext("(" + genCode(value) + ")", Object.create(null, ctxt_Obj));
+                  if (USE_PARTIAL) {
+                    var vm_returned = vm.runInNewContext("(" + genCode(value) + ")", Object.create(null, ctxt_Obj));
+                  }
                 } catch (exc1) {
                   console.log("EXC", exc1, exc1.stack, genCode(value))
                 }
@@ -47589,7 +47603,9 @@ var jstiller = (function() {
                 }
               };
               try {
-                var vm_returned = vm.runInNewContext("(" + genCode(value) + ")", Object.create(null, ctxt_Obj));
+                if (USE_PARTIAL) {
+                  var vm_returned = vm.runInNewContext("(" + genCode(value) + ")", Object.create(null, ctxt_Obj));
+                }
               } catch (exc1) {
                 console.log("EXC", exc1, exc1.stack, genCode(value))
               }
@@ -47671,7 +47687,9 @@ var jstiller = (function() {
                 }
               };
               try {
-                var vm_returned = vm.runInNewContext("(" + genCode(value) + ")", Object.create(null, ctxt_Obj));
+                if (USE_PARTIAL) {
+                  var vm_returned = vm.runInNewContext("(" + genCode(value) + ")", Object.create(null, ctxt_Obj));
+                }
               } catch (exc1) {
                 console.log("EXC", exc1, exc1.stack, genCode(value))
               }
@@ -48474,9 +48492,9 @@ var jstiller = (function() {
          * @param  {[type]} scope [description]
          * @return {[type]}       [description]
          */
-        if (scope === gscope) //Missing this called by GlobalScope
+        if (scope === gscope) { //Missing this called by GlobalScope
           return scope[EXP_THIS_OBJ].value;
-        else
+        } else
           return {
             type: ast.type
           };
