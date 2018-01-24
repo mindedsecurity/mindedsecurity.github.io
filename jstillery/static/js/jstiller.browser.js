@@ -45574,7 +45574,7 @@ function createPipeline() {
 }
 
 exports.createPipeline = createPipeline
-}).call(this,"/../src/custom_esmangle_pipeline.js","/../src")
+}).call(this,"/src/custom_esmangle_pipeline.js","/src")
 },{"escodegen":43,"esmangle":50,"estraverse":97,"util":407}],369:[function(require,module,exports){
 (function (process,global,__filename,__argument0,__argument1,__argument2,__argument3,__dirname){
 /*
@@ -46318,8 +46318,11 @@ var jstiller = (function() {
     if (n.type === "Identifier" && (n.name === "Infinity" || n.name === "undefined" || n.name === "null" || n.name === "NaN"))
       return n.name;
 
-    if (n.type === "Identifier" && global_vars.indexOf(n.name) !== -1) { // is a global standard object/funct
-      return global[n.name].toString()
+    if (n.type === "Identifier") { // is a global standard object/funct
+      if (global_vars.indexOf(n.name) !== -1)
+        return global[n.name].toString();
+      if (Object.keys(window).indexOf(n.name) !== -1)
+        return window[n.name].toString();
     }
     //Scope {value:ObjRef, pure:true|false, pure_global:true|false}
     if (n.type === "Identifier" && gscope[n.name]) { // is a Global identifier
@@ -46329,11 +46332,11 @@ var jstiller = (function() {
 
     if (n.type === "MemberExpression") {
       // 'ss'[a=1] -> 'ss'[1] 
-      if (n.property.type == "AssignmentExpression") { 
+      if (n.property.type === "AssignmentExpression") {
         if (n.property.right.type === 'Literal') {
           return n.object.value[n.property.right.value] + '';
         }
-      } else if (n.property.type == "Identifier") {
+      } else if (n.property.type === "Identifier") {
         if (n.object.type === "ArrayExpression") {
           if ([][n.property.name]) {
             return [][n.property.name].toString()
@@ -46621,7 +46624,7 @@ var jstiller = (function() {
             else
               value = undefined; //we can force to undefined as the "pure" operation are already taken above
 
-            if (ast.operator == "+") {
+            if (ast.operator === "+") {
               value = +value;
             } else if (ast.operator === "~") {
               value = ~value;
@@ -46847,7 +46850,7 @@ var jstiller = (function() {
             if (ret.left.name in gscope) {
               if (_trv.type === "Literal")
                 gscope[ret.left.name].value = _trv;
-              else if (_trv.type == "Identifier" &&
+              else if (_trv.type === "Identifier" &&
                 global_vars.indexOf(_trv.name) !== -1) {
                 gscope[ret.left.name].value = _trv;
               } else if (ret.retVal) {
@@ -46863,7 +46866,7 @@ var jstiller = (function() {
               gscope[ret.left.name].value = _trv.value;
               gscope[ret.left.name].pure = true;
               debug("Literal", gscope[ret.left.name], ret.right._trv)
-            } else if (_trv.type == "Identifier" &&
+            } else if (_trv.type === "Identifier" &&
               global_vars.indexOf(_trv.name) !== -1) {
               debug("Identifier")
               gscope[ret.left.name].value = _trv;
@@ -46877,7 +46880,7 @@ var jstiller = (function() {
                 if (r.right.type === "Literal") {
                   gscope[ret.left.name].value = r.right.value;
                   gscope[ret.left.name].pure = true;
-                } else if (r.right.type == "Identifier" && global_vars.indexOf(r.right.name) !== -1) {
+                } else if (r.right.type === "Identifier" && global_vars.indexOf(r.right.name) !== -1) {
                   gscope[ret.left.name].value = r.right;
                   gscope[ret.left.name].pure_global = true;
                 }
@@ -46977,7 +46980,7 @@ var jstiller = (function() {
           value = resolveMemberExpression(realCallee, scope, true);
 
           if (value.resolved) {
-            if (value.isGlobal && value.proparr.length == 0) {
+            if (value.isGlobal && value.proparr.length === 0) {
               value = value.resolved;
               ret.callee = realCallee = value.key;
               if (_tmp) {
@@ -47044,7 +47047,7 @@ var jstiller = (function() {
              return ret;
            _fbody=value.pop().value;*/
           _fbody = value.pop();
-          if (!_fbody || _fbody.value.trim() == "")
+          if (!_fbody || _fbody.value.trim() === "")
             return ret;
           _fbody = _fbody.value;
           if (value.length > 0) {
@@ -47152,7 +47155,6 @@ var jstiller = (function() {
             type: 'Identifier',
             name: 'atob'
           }) && ret.purearg) {
-
           value = b64.atob.apply(null,
             ret.arguments.map(getValue));
           return mkliteral(value);
@@ -47350,7 +47352,7 @@ var jstiller = (function() {
         }
 
         //
-        if (realCallee.type == "Identifier") {
+        if (realCallee.type === "Identifier") {
           valFromScope = findScope(realCallee.name, scope);
           if (valFromScope && valFromScope.value && valFromScope.value.value) {
             if ((valFromScope.value.value.type === 'FunctionExpression' || valFromScope.value.value.type === 'FunctionDeclaration')
@@ -47469,12 +47471,31 @@ var jstiller = (function() {
                   }].concat(ret.arguments).concat(newArgs)
                 }
 
-                var ctxt_Obj = {
+                /*var ctxt_Obj = {
                   atob: atob,
                   btoa: btoa
+                }*/
+                var _btoa = btoa.bind(null);
+                _btoa.__proto__ = null;
+                var _atob = atob.bind(null);
+                _atob.__proto__ = null;
+                var ctxt_Obj = {
+                  atob: {
+                    writable: true,
+                    configurable: true,
+                    value: _atob
+                  },
+                  btoa: {
+                    writable: true,
+                    configurable: true,
+                    value: _btoa
+                  }
                 };
-                var vm_returned = vm.runInNewContext("(" + genCode(value) + ")", ctxt_Obj);
-
+                try {
+                  var vm_returned = vm.runInNewContext("(" + genCode(value) + ")", Object.create(null, ctxt_Obj));
+                } catch (exc1) {
+                  console.log("EXC", exc1, exc1.stack, genCode(value))
+                }
                 if (!vm_returned || simple_types.indexOf(typeof vm_returned) !== -1)
                   return mkliteral(vm_returned);
                 else if (typeof vm_returned === 'function') {
@@ -47504,12 +47525,28 @@ var jstiller = (function() {
                 "arguments": ret.arguments ? ret.arguments.concat(newArgs) : newArgs
 
               }
-              var ctxt_Obj = {
+              /*var ctxt_Obj = {
                 atob: atob,
                 btoa: btoa
-              }
+              }*/
+              var _btoa = btoa.bind(null);
+              _btoa.__proto__ = null;
+              var _atob = atob.bind(null);
+              _atob.__proto__ = null;
+              var ctxt_Obj = {
+                atob: {
+                  writable: true,
+                  configurable: true,
+                  value: _atob
+                },
+                btoa: {
+                  writable: true,
+                  configurable: true,
+                  value: _btoa
+                }
+              };
               try {
-                var vm_returned = vm.runInNewContext("(" + genCode(value) + ")", ctxt_Obj);
+                var vm_returned = vm.runInNewContext("(" + genCode(value) + ")", Object.create(null, ctxt_Obj));
               } catch (exc1) {
                 console.log("EXC", exc1, exc1.stack, genCode(value))
               }
@@ -47570,12 +47607,31 @@ var jstiller = (function() {
                 },
                 "arguments": ret.arguments ? ret.arguments.concat(newArgs) : newArgs
               }
-              var ctxt_Obj = {
+              /*var ctxt_Obj = {
                 atob: atob,
                 btoa: btoa
+              }*/
+              var _btoa = btoa.bind(null);
+              _btoa.__proto__ = null;
+              var _atob = atob.bind(null);
+              _atob.__proto__ = null;
+              var ctxt_Obj = {
+                atob: {
+                  writable: true,
+                  configurable: true,
+                  value: _atob
+                },
+                btoa: {
+                  writable: true,
+                  configurable: true,
+                  value: _btoa
+                }
               };
-              var vm_returned = vm.runInNewContext("(" + genCode(value) + ")", ctxt_Obj)
-
+              try {
+                var vm_returned = vm.runInNewContext("(" + genCode(value) + ")", Object.create(null, ctxt_Obj));
+              } catch (exc1) {
+                console.log("EXC", exc1, exc1.stack, genCode(value))
+              }
               if (!vm_returned || simple_types.indexOf(typeof vm_returned) !== -1) {
                 return mkliteral(vm_returned);
               } else if (typeof vm_returned === 'function') {
@@ -47641,8 +47697,8 @@ var jstiller = (function() {
             scope.closed = false;
             // Not Found!! Still we want to add externalRefs.
             if (scope.externalRefs.indexOf(ast) === -1)
-              scope.externalRefs.push(ast); // We have s.g.e -> ast.name == 'e' getRealVal to see if is external or in scope);
-          //scope.externalRefs.push(// We have s.g.e -> ast.name == 'e' getRealVal to see if is external or in scope);
+              scope.externalRefs.push(ast); // We have s.g.e -> ast.name === 'e' getRealVal to see if is external or in scope);
+          //scope.externalRefs.push(// We have s.g.e -> ast.name === 'e' getRealVal to see if is external or in scope);
           }
         }
 
@@ -48292,7 +48348,7 @@ var jstiller = (function() {
         debug("ReturnStatement :", (value), (ast.argument))
         ret = {
           type: 'ReturnStatement',
-          argument: (value && value.pure == true) || scope.closed ? value : ast.argument
+          argument: (value && value.pure === true) || scope.closed ? value : ast.argument
         };
         ret.pure = ret.argument && (ret.argument.pure || ret.argument.pured || ret.argument.purable || (ret.argument.type === "Identifier" && global_vars.indexOf(ret.argument.name) !== -1));
 
@@ -48448,7 +48504,7 @@ var jstiller = (function() {
         if (match(ret.callee, {
             type: "Identifier",
             name: "Date"
-          }) && ret.purearg && ret.arguments.length == 0) {
+          }) && ret.purearg && ret.arguments.length === 0) {
           ret.retVal2 = new Date();
         }
         return ret;
@@ -48573,7 +48629,7 @@ var jstiller = (function() {
 })();
 module.exports = jstiller
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},"/../src/jstiller.js",arguments[3],arguments[4],arguments[5],arguments[6],"/../src")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},"/src/jstiller.js",arguments[3],arguments[4],arguments[5],arguments[6],"/src")
 },{"./libs/b64":370,"./libs/cycle":371,"./libs/htmlParse":372,"./native_props":373,"_process":387,"escodegen":43,"esprima":90,"util":407,"vm":408}],370:[function(require,module,exports){
 (function (Buffer){
 /*
