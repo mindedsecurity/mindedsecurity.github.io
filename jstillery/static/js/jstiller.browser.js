@@ -2189,7 +2189,7 @@ module.exports={
   "_resolved": "https://registry.npmjs.org/cheerio/-/cheerio-1.0.0-rc.2.tgz",
   "_shasum": "4b9f53a81b27e4d5dac31c0ffd0cfa03cc6830db",
   "_spec": "cheerio@^1.0.0-rc.2",
-  "_where": "/home/stefano/tmp/JStillery",
+  "_where": "/home/stefano/tmp/jstillery/JStillery_repo",
   "author": {
     "name": "Matt Mueller",
     "email": "mattmuelle@gmail.com",
@@ -7366,7 +7366,7 @@ module.exports={
   "_resolved": "https://registry.npmjs.org/escodegen/-/escodegen-1.9.0.tgz",
   "_shasum": "9811a2f265dc1cd3894420ee3717064b632b8852",
   "_spec": "escodegen@",
-  "_where": "/home/stefano/tmp/JStillery",
+  "_where": "/home/stefano/tmp/jstillery/JStillery_repo",
   "bin": {
     "esgenerate": "./bin/esgenerate.js",
     "escodegen": "./bin/escodegen.js"
@@ -9424,7 +9424,7 @@ module.exports={
   "_resolved": "https://registry.npmjs.org/estraverse/-/estraverse-2.0.0.tgz",
   "_shasum": "5ae46963243600206674ccb24a09e16674fcdca1",
   "_spec": "estraverse@^2.0.0",
-  "_where": "/home/stefano/tmp/JStillery/node_modules/escope",
+  "_where": "/home/stefano/tmp/jstillery/JStillery_repo/node_modules/escope",
   "bugs": {
     "url": "https://github.com/estools/estraverse/issues"
   },
@@ -16352,7 +16352,7 @@ module.exports={
   "_resolved": "https://registry.npmjs.org/esmangle/-/esmangle-1.0.1.tgz",
   "_shasum": "d9bb37b8f8eafbf4e6d4ed6b7aa2956abbd3c4c2",
   "_spec": "esmangle@",
-  "_where": "/home/stefano/tmp/JStillery",
+  "_where": "/home/stefano/tmp/jstillery/JStillery_repo",
   "bin": {
     "esmangle": "./bin/esmangle.js"
   },
@@ -24398,7 +24398,7 @@ module.exports={
   "_resolved": "https://registry.npmjs.org/estraverse/-/estraverse-4.1.1.tgz",
   "_shasum": "f6caca728933a850ef90661d0e17982ba47111a2",
   "_spec": "estraverse@~4.1.1",
-  "_where": "/home/stefano/tmp/JStillery/node_modules/esshorten",
+  "_where": "/home/stefano/tmp/jstillery/JStillery_repo/node_modules/esshorten",
   "bugs": {
     "url": "https://github.com/estools/estraverse/issues"
   },
@@ -24467,7 +24467,7 @@ module.exports={
   "_resolved": "https://registry.npmjs.org/esshorten/-/esshorten-1.1.1.tgz",
   "_shasum": "174f96b7cc267e46872d814e7db7c290bdff61a9",
   "_spec": "esshorten@~1.1.0",
-  "_where": "/home/stefano/tmp/JStillery/node_modules/esmangle",
+  "_where": "/home/stefano/tmp/jstillery/JStillery_repo/node_modules/esmangle",
   "bugs": {
     "url": "https://github.com/estools/esshorten/issues"
   },
@@ -25397,7 +25397,7 @@ module.exports={
   "_resolved": "https://registry.npmjs.org/estraverse/-/estraverse-4.2.0.tgz",
   "_shasum": "0dee3fed31fcd469618ce7342099fc1afa0bdb13",
   "_spec": "estraverse@^4.2.0",
-  "_where": "/home/stefano/tmp/JStillery/node_modules/escodegen",
+  "_where": "/home/stefano/tmp/jstillery/JStillery_repo/node_modules/escodegen",
   "bugs": {
     "url": "https://github.com/estools/estraverse/issues"
   },
@@ -47181,16 +47181,36 @@ var jstiller = (function() {
             ret.arguments.map(getValue));
           return mkliteral(value);
         }
-        var methods1 = ["Date", "escape", "unescape", "encodeURIComponent", "decodeURIComponent", "encodeURI",
-          "decodeURI"];
-        if (realCallee && realCallee.type === "Identifier" && methods1.indexOf(realCallee.name) !== -1) {
+
+        if (match(realCallee, {
+            type: 'Identifier',
+            name: "Date"
+          }) && ret.purearg) {
+          try {
+            value = global["Date"].apply(null,
+              ret.arguments.map(getValue));
+            return mkliteral(value);
+          } catch (e) {}
+        }
+
+        var methods1 = ["escape", "unescape", "encodeURIComponent",
+          "decodeURIComponent", "encodeURI", "decodeURI"];
+        if (realCallee
+          && realCallee.type === "Identifier"
+          && methods1.indexOf(realCallee.name) !== -1) {
+          if (ret.arguments.length) {
+            try {
+              _tmp = toString(ret.arguments[0]);
+            } catch (e) {}
+          }
           if (match(realCallee, {
               type: 'Identifier',
               name: realCallee.name
-            }) && ret.purearg) {
-            value = global[realCallee.name].apply(null,
-              ret.arguments.map(getValue));
-            return mkliteral(value);
+            }) && _tmp) {
+            try {
+              value = global[realCallee.name].call(null, _tmp);
+              return mkliteral(value);
+            } catch (e) {}
           }
         }
 
@@ -48648,8 +48668,70 @@ var jstiller = (function() {
 
       case 'WithStatement': //TODO: Sets this to argument.
         return ast;
-        // TODO: 
 
+      case 'TaggedTemplateExpression':
+         ret = {
+          type: "TaggedTemplateExpression",
+          tag: ast_reduce_scoped(ast.tag),
+          quasi: ast_reduce_scoped(ast.quasi)
+         }
+         return ret;
+       break;
+ 
+      case 'TemplateLiteral':
+        // It's the argument of a taggedTemplateExpression 
+        if (parent.quasi && parent.quasi === ast) {
+          // We need to keep the Template Literal
+          // to keep the original behavior of the taggedTemplateExpression
+          // but we reduce all the 
+          ast.quasis.forEach(function(el, id) {
+            if (el.value.cooked) {
+              el.value.raw = el.value.cooked;
+            }
+            if (!el.tail) {
+              ast.expressions[id] = ast_reduce_scoped(ast.expressions[id]);
+            }
+          });
+          return ast;
+        } else {
+          //else we transform it as a string concat.
+          //Some part inspired by https://github.com/babel/babel/blob/master/packages/babel-plugin-transform-template-literals/src/index.js
+          //TODO: complete implementation for: https://github.com/babel/babel/pull/5791
+          _tmp = [mkliteral("")];
+          _trv = ast.expressions.slice(0);
+          ast.quasis.forEach(function(el, id) {
+            if (el.value.cooked) {
+              _tmp.push(mkliteral(el.value.cooked));
+            }
+            if (!el.tail) {
+              _tmp.push(ast_reduce_scoped(_trv[id]));
+            }
+          });
+          ret = {
+            type: "BinaryExpression",
+            left: {},
+            operator: '+',
+            right: _tmp.pop()
+          }
+          _trv = ret;
+          while (_tmp.length) {
+            if (_tmp.length === 1) {
+              _trv.left = _tmp.pop();
+            } else {
+              _trv.left = {
+                type: "BinaryExpression",
+                left: {},
+                operator: '+',
+                right: _tmp.pop()
+              }
+            }
+            _trv = _trv.left;
+          }
+          return ast_reduce_scoped(ret);
+        }
+        break;
+      
+      // TODO:
       case 'ArrowFunctionExpression':
         return ast
         // TODO: 
