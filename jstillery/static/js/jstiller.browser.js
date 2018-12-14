@@ -54220,7 +54220,7 @@ var jstiller = (function() {
           } else {
             calleeBody.retVal = mkliteral(calleeBody.value);
           }
-        } else if ( /*EXPERIMENTAL!*/ calleeBody && calleeBody.body && calleeBody.body.length === 1 && calleeBody.scope.hasOwnProperty("returns")
+        } else if ( /*EXPERIMENTAL!*/ calleeBody && calleeBody.body && calleeBody.body.length === 1 && calleeBody.body[0].argument && calleeBody.scope.hasOwnProperty("returns")
           && calleeBody.scope.returns === 1) {
           //TODO   We need to copy the function scope and add params values!! tmp_scope = Object.create(calleBody.scope)
           //       Copy all values.
@@ -55190,6 +55190,9 @@ var jstiller = (function() {
 
       case 'ReturnStatement':
         debug('ReturnStatement');
+        if(ast.argument==null){
+          return ast;
+        }
         value = ast_reduce(ast.argument, scope, true, ast);
         scope.returns = scope.hasOwnProperty("returns") ? ++scope.returns : 1;
 
