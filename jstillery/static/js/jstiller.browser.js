@@ -55229,7 +55229,7 @@ var jstiller = (function() {
         debug("ReturnStatement :", (value), (ast.argument))
         if (value.type === 'SequenceExpression') {
           ret = {
-            type: 'Program',
+            type: 'BlockStatement',
             body: []
           };
           value.expressions.forEach(function(el, id) {
