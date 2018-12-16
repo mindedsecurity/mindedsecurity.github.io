@@ -7446,7 +7446,6 @@ module.exports={"amp":"&","apos":"'","gt":">","lt":"<","quot":"\""}
 
         if (stmt.leadingComments && stmt.leadingComments.length > 0) {
             save = result;
-
             if (preserveBlankLines) {
                 comment = stmt.leadingComments[0];
                 result = [];
@@ -53435,6 +53434,9 @@ var jstiller = (function() {
         return ret;
 
       case 'ExpressionStatement':
+        if(ast.expression.type === 'ConditionalExpression'){
+          ast.expression.canbetransformed = true;
+        }
         ret = {
           type: ast.type,
           expression: ast_reduce_scoped(ast.expression)
@@ -54625,7 +54627,11 @@ var jstiller = (function() {
         })
         ret.simpleType = ret.elements.every(function(a) {
           debug("SIMPLETYPE: ", a); return a.type === "Literal"
-        })
+        });
+        ret.elements.forEach((el,index )=> {el.leadingComments=[{
+          type: "block",
+          value: "["+index+"]"
+        }]});
         return ret;
 
       case 'ObjectExpression':
@@ -55167,7 +55173,7 @@ var jstiller = (function() {
           (ret.body && ret.body.body && ret.body.body.length > 0 && ret.body.body[ret.body.body.length - 1].type === "ReturnStatement")) {
           ret.callable = true;
         }
-        ret.leadingComments = [{
+        ret.body.leadingComments = [{
           type: "block",
           value: " Called:" + ast.called + " | Scope Closed:" + fscope.closed +
             (!fscope.closed ? "| writes:" + (fscope.externalWrite ? true : false) : "")
@@ -55238,7 +55244,31 @@ var jstiller = (function() {
               ret.body.push({"type": "ExpressionStatement",
             "expression": el});
           });
-        } else{
+        } else if(value.type === 'ConditionalExpression'){ 
+          /*
+          rewrites 
+          function e(){return a?r:g;}
+          to
+          function e()
+            {
+                if (a)
+                    return r;
+                else
+                    return g;
+            }
+          */
+          ret = {};
+          ret.type = 'IfStatement';
+          ret.test = value.test;
+          ret.consequent = {
+            type: 'ReturnStatement',
+            argument: value.consequent
+          };
+          ret.alternate = {
+            type: 'ReturnStatement',
+            argument: value.alternate
+          };
+        } else {
           ret = {
             type: 'ReturnStatement',
             argument: (value && value.pure === true) || scope.closed ? value : ast.argument
@@ -55334,14 +55364,16 @@ var jstiller = (function() {
       case 'ConditionalExpression': // a?b:c
         ret = {
           type: ast.type,
+          canbetransformed: ast.canbetransformed || parent.canbetransformed,
           test: ast_reduce_scoped(ast.test), //Expand or Not? Lookahead?
           consequent: ast_reduce_scoped(ast.consequent),
           alternate: ast_reduce_scoped(ast.alternate)
         };
+
         // if this ternary operator is standalone, we might want to expand it as a if then else
         if ((parent.type === 'ExpressionStatement' && ast === parent.expression )
           // OR is the child of another ConditionalExpression 
-            || (parent.type === 'ConditionalExpression' && ast !== parent.test )
+            || (parent.type === 'ConditionalExpression' && ast !== parent.test && ret.canbetransformed)
           ) {
           ret.type = 'IfStatement';
         } else {
@@ -55400,6 +55432,15 @@ var jstiller = (function() {
             name: 'Boolean'
           }) && ret.purearg) {
           value = Boolean.apply(null,
+            ret.arguments.map(getValue));
+          return mkliteral(value);
+        }
+        // RegExp(X) > /X/i
+        if (match(ret.callee, {
+            type: 'Identifier',
+            name: 'RegExp'
+          }) && ret.purearg) {
+          value = RegExp.apply(null,
             ret.arguments.map(getValue));
           return mkliteral(value);
         }
