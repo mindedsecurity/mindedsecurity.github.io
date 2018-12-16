@@ -54628,10 +54628,10 @@ var jstiller = (function() {
         ret.simpleType = ret.elements.every(function(a) {
           debug("SIMPLETYPE: ", a); return a.type === "Literal"
         });
-        ret.elements.forEach((el,index )=> {el.leadingComments=[{
+/*        ret.elements.forEach((el,index )=> {el.leadingComments=[{
           type: "block",
           value: "["+index+"]"
-        }]});
+        }]});*/
         return ret;
 
       case 'ObjectExpression':
@@ -55229,7 +55229,7 @@ var jstiller = (function() {
         debug("ReturnStatement :", (value), (ast.argument))
         if (value.type === 'SequenceExpression') {
           ret = {
-            type: 'BlockStatement',
+            type: 'Program',
             body: []
           };
           value.expressions.forEach(function(el, id) {
